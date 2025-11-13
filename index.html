@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Show Tracker</title>
+    <!-- 1. Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Load icon library (for UI elements) -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    
+    <!-- 3. Configuration for Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    
+    <!-- 4. Basic Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Style for the file input */
+        input[type="file"]::file-selector-button {
+            @apply bg-gray-600 text-white font-semibold px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto max-w-6xl p-4">
+
+        <!-- =======================
+             HEADER
+        ======================== -->
+        <header class="bg-white p-6 rounded-xl shadow-lg mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-800">Trade Show Tracker</h1>
+                    <p class="text-lg text-gray-500" id="current-time">Loading time...</p>
+                </div>
+                
+                <!-- Event Selector and Data Management -->
+                <div class="flex flex-col items-end gap-4 w-full md:w-auto">
+                    <div class="flex items-center gap-2 w-full">
+                        <label for="event-selector" class="text-sm font-medium text-gray-700 whitespace-nowrap">Current Event:</label>
+                        <div class="flex w-full items-center gap-1">
+                            <select id="event-selector" class="block w-full px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <!-- Options will be populated by JS -->
+                            </select>
+                            <button id="edit-event-button" title="Edit Event Settings" class="p-2 text-gray-500 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors">
+                                <ion-icon name="settings-outline" class="text-xl"></ion-icon>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button id="export-button" class="flex-1 w-full md:w-auto text-sm bg-green-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                            <ion-icon name="download-outline"></ion-icon>
+                            Export
+                        </button>
+                        <label class="flex-1 w-full md:w-auto text-sm bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                            <ion-icon name="cloud-upload-outline"></ion-icon>
+                            Import
+                            <input type="file" id="import-file" class="hidden" accept=".json">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- =======================
+             TAB NAVIGATION
+        ======================== -->
+        <nav class="flex border-b-2 border-gray-200 mb-6" id="tabs-container">
+            <button data-tab="home" class="tab-button flex items-center gap-2 px-6 py-3 text-lg font-medium text-gray-500 border-b-4 border-transparent hover:text-blue-600">
+                <ion-icon name="home-outline"></ion-icon> Home
+            </button>
+            <button data-tab="schedule" class="tab-button flex items-center gap-2 px-6 py-3 text-lg font-medium text-gray-500 border-b-4 border-transparent hover:text-blue-600">
+                <ion-icon name="calendar-outline"></ion-icon> Schedule
+            </button>
+            <button data-tab="contacts" class="tab-button flex items-center gap-2 px-6 py-3 text-lg font-medium text-gray-500 border-b-4 border-transparent hover:text-blue-600">
+                <ion-icon name="people-outline"></ion-icon> Contacts
+            </button>
+            <button data-tab="add-new" class="tab-button flex items-center gap-2 px-6 py-3 text-lg font-medium text-gray-500 border-b-4 border-transparent hover:text-blue-600">
+                <ion-icon name="add-circle-outline"></ion-icon> Add New
+            </button>
+        </nav>
+
+        <!-- =======================
+             TAB CONTENT
+        ======================== -->
+        <main id="tab-content">
+
+            <!-- === HOME TAB === -->
+            <div id="tab-home" class="tab-pane space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- What's Next -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">What's Next?</h2>
+                        <div id="next-event-container">
+                            <!-- JS will populate this -->
+                            <p class="text-gray-500">No upcoming events found for today.</p>
+                        </div>
+                        <!-- Countdown timer will be injected here -->
+                    </div>
+                    
+                    <!-- To-Dos -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Pending To-Dos</h2>
+                        <div id="todo-list-container" class="space-y-3">
+                            <!-- JS will populate this -->
+                            <p class="text-gray-500">You're all caught up!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- === SCHEDULE TAB === -->
+            <div id="tab-schedule" class="tab-pane space-y-6 hidden">
+                <!-- Schedule Controls -->
+                <div class="bg-white p-4 rounded-xl shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <label for="schedule-date" class="text-lg font-medium">Show Schedule For:</label>
+                        <input type="date" id="schedule-date" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button id="suggest-times-button" class="w-full md:w-auto bg-teal-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-teal-700 transition-colors">
+                        Suggest Meeting Times
+                    </button>
+                </div>
+                
+                <!-- Availability Modal (Hidden by default) -->
+                <div id="availability-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-2xl font-bold">Available Times</h3>
+                            <button id="close-modal-button" class="text-gray-500 hover:text-gray-800">
+                                <ion-icon name="close-circle-outline" class="text-3xl"></ion-icon>
+                            </button>
+                        </div>
+                        <div id="availability-content" class="space-y-2 text-lg">
+                            <!-- JS will populate this -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Daily Schedule -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4" id="schedule-day-title">Today's Schedule</h2>
+                    <div id="daily-schedule-container" class="space-y-4">
+                        <!-- JS will populate this -->
+                        <p class="text-gray-500">No events scheduled for this day.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- === CONTACTS TAB === -->
+            <div id="tab-contacts" class="tab-pane space-y-6 hidden">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800">All Contacts</h2>
+                        
+                        <div class="flex items-center gap-2">
+                            <label for="contact-sort" class="text-sm font-medium text-gray-700">Sort by:</label>
+                            <select id="contact-sort" class="block w-full sm:w-auto px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="name" selected>Name</option>
+                                <option value="company">Company</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <input type="text" id="contact-search" placeholder="Search contacts..." class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div id="contacts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- JS will populate this -->
+                        <p class="text-gray-500 col-span-full">No contacts found.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- === ADD NEW TAB === -->
+            <div id="tab-add-new" class="tab-pane grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+                <!-- Add New Event/To-Do Form -->
+                <form id="add-event-form" class="bg-white p-6 rounded-xl shadow-lg space-y-4">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Add New Entry</h2>
+                    
+                    <div>
+                        <label for="event-type" class="block text-sm font-medium text-gray-700">Entry Type</label>
+                        <select id="event-type" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="meeting">Meeting</option>
+                            <option value="conference">Press Conference</option>
+                            <option value="interview">Interview</option>
+                            <option value="todo">To-Do</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="event-title" class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" id="event-title" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="event-date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="event-date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div id="event-time-fields">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label for="event-start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+                                    <input type="time" id="event-start-time" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label for="event-end-time" class="block text-sm font-medium text-gray-700">End Time</label>
+                                    <input type="time" id="event-end-time" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="event-location-field">
+                        <label for="event-location" class="block text-sm font-medium text-gray-700">Location (e.g., Booth #123)</label>
+                        <input type="text" id="event-location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div id="event-contacts-field">
+                        <label for="event-contacts" class="block text-sm font-medium text-gray-700">Link Contacts (Optional)</label>
+                        <select id="event-contacts" multiple class="mt-1 block w-full h-32 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <!-- JS will populate this -->
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="event-notes" class="block text-sm font-medium text-gray-700">Notes</label>
+                        <textarea id="event-notes" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow hover:bg-blue-700 transition-colors">
+                        Save Entry
+                    </button>
+                </form>
+                
+                <!-- Add New Contact Form -->
+                <form id="add-contact-form" class="bg-white p-6 rounded-xl shadow-lg space-y-4 h-fit">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Add New Contact</h2>
+                    
+                    <div>
+                        <label for="contact-name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" id="contact-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="contact-company" class="block text-sm font-medium text-gray-700">Company</label>
+                        <input type="text" id="contact-company" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="contact-title" class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" id="contact-title" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="contact-phone" class="block text-sm font-medium text-gray-700">Phone</label>
+                            <input type="tel" id="contact-phone" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="contact-email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="contact-email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="contact-notes" class="block text-sm font-medium text-gray-700">Notes</Doteslabel>
+                        <textarea id="contact-notes" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow hover:bg-green-700 transition-colors">
+                        Save Contact
+                    </button>
+                </form>
+            </div>
+
+        </main>
+        
+        <!-- Custom Toast Notification -->
+        <div id="toast" class="hidden fixed bottom-10 right-10 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-xl text-lg transition-all duration-300 transform translate-y-10 opacity-0">
+            <span id="toast-message"></span>
+        </div>
+
+    </div> <!-- /container -->
+
+    <!-- =======================
+         MODALS
+    ======================== -->
+
+    <!-- Event Settings Modal -->
+    <div id="event-settings-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold">Event Settings</h3>
+                <button id="close-settings-modal-button" class="text-gray-500 hover:text-gray-800">
+                    <ion-icon name="close-circle-outline" class="text-3xl"></ion-icon>
+                </button>
+            </div>
+            
+            <form id="event-settings-form" class="space-y-4 overflow-y-auto pr-2">
+                <div>
+                    <label for="setting-event-name" class="block text-sm font-medium text-gray-700">Event Name</label>
+                    <input type="text" id="setting-event-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="setting-start-date" class="block text-sm font-medium text-gray-700">Event Start Date</label>
+                        <input type="date" id="setting-start-date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="setting-end-date" class="block text-sm font-medium text-gray-700">Event End Date</label>
+                        <input type="date" id="setting-end-date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between items-center mt-2 mb-2">
+                        <h4 class="text-lg font-medium text-gray-800">Daily Event Hours</h4>
+                        <button type="button" id="copy-hours-button" class="text-sm text-blue-600 hover:underline font-medium">Copy first day to all</button>
+                    </div>
+                    <div id="daily-hours-container" class="space-y-2 max-h-48 overflow-y-auto bg-gray-50 p-3 rounded-lg border">
+                        <p class="text-gray-500">Set start and end dates to define daily hours.</p>
+                    </div>
+                </div>
+            </form>
+            
+            <div class="mt-6 pt-4 border-t flex justify-end gap-3">
+                <button id="cancel-settings-button" type="button" class="bg-gray-200 text-gray-800 px-5 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+                <button id="save-settings-button" type="button" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors">
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Event Modal -->
+    <div id="edit-event-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold">Edit Entry</h3>
+                <button id="close-edit-modal-button" class="text-gray-500 hover:text-gray-800">
+                    <ion-icon name="close-circle-outline" class="text-3xl"></ion-icon>
+                </button>
+            </div>
+            
+            <form id="edit-event-form" class="space-y-4 overflow-y-auto pr-2">
+                <input type="hidden" id="edit-event-id">
+                
+                <div>
+                    <label for="edit-event-type" class="block text-sm font-medium text-gray-700">Entry Type</label>
+                    <select id="edit-event-type" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="meeting">Meeting</option>
+                        <option value="conference">Press Conference</option>
+                        <option value="interview">Interview</option>
+                        <!-- To-Do editing not supported via this modal, they are handled on home page -->
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="edit-event-title" class="block text-sm font-medium text-gray-700">Title</label>
+                    <input type="text" id="edit-event-title" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-event-date" class="block text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" id="edit-event-date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="edit-event-start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+                                <input type="time" id="edit-event-start-time" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="edit-event-end-time" class="block text-sm font-medium text-gray-700">End Time</label>
+                                <input type="time" id="edit-event-end-time" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="edit-event-location" class="block text-sm font-medium text-gray-700">Location</label>
+                    <input type="text" id="edit-event-location" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label for="edit-event-contacts" class="block text-sm font-medium text-gray-700">Link Contacts (Optional)</label>
+                    <select id="edit-event-contacts" multiple class="mt-1 block w-full h-32 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <!-- JS will populate this -->
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="edit-event-notes" class="block text-sm font-medium text-gray-700">Notes</label>
+                    <textarea id="edit-event-notes" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                
+                <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow hover:bg-blue-700 transition-colors">
+                    Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Contact Details Modal -->
+    <div id="contact-details-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold">Contact Details</h3>
+                <button id="close-contact-modal-button" class="text-gray-500 hover:text-gray-800">
+                    <ion-icon name="close-circle-outline" class="text-3xl"></ion-icon>
+                </button>
+            </div>
+            <div id="contact-details-modal-content" class="space-y-3">
+                <!-- JS will populate this -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // =======================
+            //  STATE & CONSTANTS
+            // =======================
+            let appData = {
+                contacts: [],
+                schedule: []
+            };
+            let eventNames = [];
+            let currentEventName = '';
+            let selectedScheduleDate = getTodayDateString();
+            let currentNextEvent = null; // For countdown timer
+            
+            const LS_EVENT_NAMES_KEY = 'tradeShowApp_eventNames';
+            const LS_ACTIVE_EVENT_KEY = 'tradeShowApp_activeEvent';
+            const getEventDataKey = (name) => `tradeShowApp_data_${name}`;
+            
+            // =======================
+            //  ELEMENT SELECTORS
+            // =======================
+            const currentTimeEl = document.getElementById('current-time');
+            const eventSelector = document.getElementById('event-selector');
+            const exportButton = document.getElementById('export-button');
+            const importFile = document.getElementById('import-file');
+            const tabsContainer = document.getElementById('tabs-container');
+            const tabContent = document.getElementById('tab-content');
+            
+            // Tab Panes
+            const homePane = document.getElementById('tab-home');
+            const schedulePane = document.getElementById('tab-schedule');
+            const contactsPane = document.getElementById('tab-contacts');
+            const addNewPane = document.getElementById('tab-add-new');
+            
+            // Home
+            const nextEventContainer = document.getElementById('next-event-container');
+            const todoListContainer = document.getElementById('todo-list-container');
+            
+            // Schedule
+            const scheduleDateInput = document.getElementById('schedule-date');
+            const scheduleDayTitle = document.getElementById('schedule-day-title');
+            const dailyScheduleContainer = document.getElementById('daily-schedule-container');
+            const suggestTimesButton = document.getElementById('suggest-times-button');
+            const availabilityModal = document.getElementById('availability-modal');
+            const availabilityContent = document.getElementById('availability-content');
+            const closeModalButton = document.getElementById('close-modal-button');
+            
+            // Settings Modal
+            const editEventButton = document.getElementById('edit-event-button');
+            const eventSettingsModal = document.getElementById('event-settings-modal');
+            const closeSettingsModalButton = document.getElementById('close-settings-modal-button');
+            const cancelSettingsButton = document.getElementById('cancel-settings-button');
+            const saveSettingsButton = document.getElementById('save-settings-button');
+            const settingEventName = document.getElementById('setting-event-name');
+            const settingStartDate = document.getElementById('setting-start-date');
+            const settingEndDate = document.getElementById('setting-end-date');
+            const dailyHoursContainer = document.getElementById('daily-hours-container');
+            const copyHoursButton = document.getElementById('copy-hours-button');
+
+            // Edit Event Modal
+            const editEventModal = document.getElementById('edit-event-modal');
+            const editEventForm = document.getElementById('edit-event-form');
+            const closeEditModalButton = document.getElementById('close-edit-modal-button');
+            const editEventType = document.getElementById('edit-event-type');
+
+            // Contact Details Modal
+            const contactDetailsModal = document.getElementById('contact-details-modal');
+            const closeContactModalButton = document.getElementById('close-contact-modal-button');
+            const contactDetailsModalContent = document.getElementById('contact-details-modal-content');
+
+            // Contacts
+            const contactSearch = document.getElementById('contact-search');
+            const contactsContainer = document.getElementById('contacts-container');
+            const contactSort = document.getElementById('contact-sort');
+            
+            // Add New
+            const addEventForm = document.getElementById('add-event-form');
+            const addContactForm = document.getElementById('add-contact-form');
+            const eventType = document.getElementById('event-type');
+            const eventTimeFields = document.getElementById('event-time-fields');
+            const eventLocationField = document.getElementById('event-location-field');
+            const eventContactsField = document.getElementById('event-contacts-field');
+            const eventContactsSelect = document.getElementById('event-contacts');
+            
+            // Toast
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            // =======================
+            //  INITIALIZATION
+            // =======================
+            
+            function initApp() {
+                // 1. Load event names list
+                const storedEventNames = localStorage.getItem(LS_EVENT_NAMES_KEY);
+                eventNames = storedEventNames ? JSON.parse(storedEventNames) : [];
+                
+                // 2. Get active event
+                const lastActiveEvent = localStorage.getItem(LS_ACTIVE_EVENT_KEY);
+                
+                // 3. If no events, create a default one
+                if (eventNames.length === 0) {
+                    eventNames.push('My First Trade Show');
+                    saveEventNames();
+                }
+                
+                // 4. Set current event
+                currentEventName = lastActiveEvent && eventNames.includes(lastActiveEvent) ? lastActiveEvent : eventNames[0];
+                localStorage.setItem(LS_ACTIVE_EVENT_KEY, currentEventName);
+                
+                // 5. Populate selector
+                populateEventSelector();
+                eventSelector.value = currentEventName;
+                
+                // 6. Load data for the active event
+                loadData();
+                
+                // 7. Set up UI
+                scheduleDateInput.value = selectedScheduleDate;
+                setupEventListeners();
+                startClock();
+                
+                // 8. Initial Render
+                switchTab('home');
+                renderAll();
+            }
+            
+            function setupEventListeners() {
+                // Tab switching
+                tabsContainer.addEventListener('click', (e) => {
+                    const tabButton = e.target.closest('.tab-button');
+                    if (tabButton) {
+                        switchTab(tabButton.dataset.tab);
+                    }
+                });
+                
+                // Event selector
+                eventSelector.addEventListener('change', handleEventChange);
+                
+                // Data management
+                exportButton.addEventListener('click', handleExport);
+                importFile.addEventListener('change', handleImport);
+                
+                // Settings Modal
+                editEventButton.addEventListener('click', openEventSettingsModal);
+                closeSettingsModalButton.addEventListener('click', closeEventSettingsModal);
+                cancelSettingsButton.addEventListener('click', closeEventSettingsModal);
+                saveSettingsButton.addEventListener('click', handleSaveSettings);
+                settingStartDate.addEventListener('change', renderDailyHoursInputs);
+                settingEndDate.addEventListener('change', renderDailyHoursInputs);
+                copyHoursButton.addEventListener('click', handleCopyHours);
+
+                // Edit Event Modal
+                editEventForm.addEventListener('submit', handleSaveEditEvent);
+                closeEditModalButton.addEventListener('click', () => editEventModal.classList.add('hidden'));
+
+                // Contact Details Modal
+                closeContactModalButton.addEventListener('click', () => contactDetailsModal.classList.add('hidden'));
+
+                // Forms
+                addEventForm.addEventListener('submit', handleAddEvent);
+                addContactForm.addEventListener('submit', handleAddContact);
+                eventType.addEventListener('change', toggleEventFormFields);
+                
+                // Schedule
+                scheduleDateInput.addEventListener('change', (e) => {
+                    selectedScheduleDate = e.target.value;
+                    renderSchedule();
+                });
+                suggestTimesButton.addEventListener('click', handleSuggestTimes);
+                closeModalButton.addEventListener('click', () => availabilityModal.classList.add('hidden'));
+                
+                // Contacts
+                contactSearch.addEventListener('input', () => renderContacts(contactSearch.value));
+                contactSort.addEventListener('change', () => renderContacts(contactSearch.value));
+                
+                // Delegated listeners for dynamic content
+                document.body.addEventListener('click', (e) => {
+                    // Mark to-do as complete
+                    const completeButton = e.target.closest('.complete-todo-button');
+                    if (completeButton) {
+                        toggleTodoComplete(completeButton.dataset.id);
+                        return; // Prevent other clicks
+                    }
+                    
+                    // Delete schedule item
+                    const deleteButton = e.target.closest('.delete-event-button');
+                    if (deleteButton) {
+                        if (confirm('Are you sure you want to delete this event?')) {
+                            deleteScheduleItem(deleteButton.dataset.id);
+                        }
+                        return; // Prevent other clicks
+                    }
+
+                    // Edit schedule item
+                    const editButton = e.target.closest('.edit-event-button');
+                    if (editButton) {
+                        openEditEventModal(editButton.dataset.id);
+                        return; // Prevent other clicks
+                    }
+
+                    // Show contact details
+                    const contactPill = e.target.closest('.contact-pill-button');
+                    if (contactPill) {
+                        showContactDetailsModal(contactPill.dataset.contactId);
+                        return; // Prevent other clicks
+                    }
+
+                    // Delete contact
+                    const deleteContactButton = e.target.closest('.delete-contact-button');
+                    if (deleteContactButton) {
+                        if (confirm('Are you sure you want to delete this contact? This may unlink them from events.')) {
+                            deleteContact(deleteContactButton.dataset.id);
+                        }
+                        return; // Prevent other clicks
+                    }
+                });
+            }
+            
+            // =======================
+            //  DATA MANAGEMENT
+            // =======================
+            
+            function loadEventNames() {
+                const storedEventNames = localStorage.getItem(LS_EVENT_NAMES_KEY);
+                eventNames = storedEventNames ? JSON.parse(storedEventNames) : [];
+            }
+            
+            function saveEventNames() {
+                localStorage.setItem(LS_EVENT_NAMES_KEY, JSON.stringify(eventNames));
+            }
+            
+            function loadData() {
+                const dataKey = getEventDataKey(currentEventName);
+                const storedData = localStorage.getItem(dataKey);
+                
+                const defaultData = {
+                    eventDetails: { name: currentEventName, startDate: '', endDate: '', dailyHours: [] },
+                    contacts: [],
+                    schedule: []
+                };
+
+                appData = storedData ? JSON.parse(storedData) : defaultData;
+                
+                // Migrate old data structure or ensure eventDetails exists
+                if (!appData.eventDetails) {
+                    appData.eventDetails = defaultData.eventDetails;
+                }
+                // Ensure name is synced
+                appData.eventDetails.name = currentEventName;
+            }
+            
+            function saveData() {
+                const dataKey = getEventDataKey(currentEventName);
+                localStorage.setItem(dataKey, JSON.stringify(appData));
+            }
+
+            function renderAll() {
+                renderHome();
+                renderSchedule();
+                renderContacts(contactSearch.value);
+                renderContactOptions();
+            }
+
+            function handleEventChange(e) {
+                const selectedValue = e.target.value;
+                
+                if (selectedValue === 'add_new_event') {
+                    const newEventName = prompt('Enter name for the new event:');
+                    if (newEventName && newEventName.trim() !== '') {
+                        if (eventNames.includes(newEventName)) {
+                            showToast(`Event "${newEventName}" already exists.`, 'error');
+                            eventSelector.value = currentEventName; // Reset dropdown
+                        } else {
+                            eventNames.push(newEventName);
+                            saveEventNames();
+                            currentEventName = newEventName;
+                            populateEventSelector();
+                            eventSelector.value = currentEventName;
+                        }
+                    } else {
+                        eventSelector.value = currentEventName; // Reset dropdown
+                        return;
+                    }
+                } else {
+                    currentEventName = selectedValue;
+                }
+                
+                localStorage.setItem(LS_ACTIVE_EVENT_KEY, currentEventName);
+                currentNextEvent = null; // Reset countdown
+                loadData();
+                renderAll();
+                showToast(`Switched to event: ${currentEventName}`);
+            }
+
+            function populateEventSelector() {
+                eventSelector.innerHTML = ''; // Clear existing
+                eventNames.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    eventSelector.appendChild(option);
+                });
+                
+                const addOption = document.createElement('option');
+                addOption.value = 'add_new_event';
+                addOption.textContent = '+++ Add New Event...';
+                addOption.classList.add('font-bold', 'text-blue-600');
+                eventSelector.appendChild(addOption);
+            }
+            
+            function handleExport() {
+                const dataStr = JSON.stringify(appData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentEventName.replace(/ /g, '_')}_backup.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('Data exported successfully!');
+            }
+            
+            function handleImport() {
+                const file = importFile.files[0];
+                if (!file) {
+                    showToast('No file selected.', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        
+                        // Basic validation
+                        if (importedData && Array.isArray(importedData.contacts) && Array.isArray(importedData.schedule)) {
+                            if (confirm('This will overwrite all data for the current event. Are you sure?')) {
+                                appData = importedData;
+                                saveData();
+                                renderAll();
+                                showToast('Data imported successfully!');
+                            }
+                        } else {
+                            throw new Error('Invalid file format.');
+                        }
+                    } catch (err) {
+                        showToast(`Import failed: ${err.message}`, 'error');
+                    } finally {
+                        importFile.value = ''; // Reset file input
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            // =======================
+            //  CORE LOGIC & HANDLERS
+            // =======================
+
+            function startClock() {
+                updateTime();
+                setInterval(updateTime, 1000); // Update every second
+            }
+
+            function updateTime() {
+                const now = new Date();
+                currentTimeEl.textContent = now.toLocaleString();
+                
+                // Update countdown timer
+                updateCountdown(now);
+            }
+
+            function updateCountdown(now) {
+                const countdownEl = document.getElementById('next-event-countdown');
+                if (!currentNextEvent || !countdownEl) {
+                    if (countdownEl) countdownEl.innerHTML = '';
+                    return;
+                }
+
+                const eventTime = new Date(`${currentNextEvent.date}T${currentNextEvent.startTime}`);
+                const diffInMs = eventTime - now;
+                const diffInMinutes = Math.floor(diffInMs / 60000);
+
+                // Event has started or passed
+                if (diffInMs <= 0) {
+                    currentNextEvent = null;
+                    renderHome(); // Find the next event
+                    return;
+                }
+
+                // Apply color coding
+                countdownEl.classList.remove('text-green-600', 'text-yellow-600', 'text-red-600', 'bg-green-50', 'bg-yellow-50', 'bg-red-50');
+                let colorClass = '';
+                let bgClass = '';
+
+                if (diffInMinutes >= 60) {
+                    colorClass = 'text-green-600';
+                    bgClass = 'bg-green-50';
+                } else if (diffInMinutes >= 15) {
+                    colorClass = 'text-yellow-600';
+                    bgClass = 'bg-yellow-50';
+                } else {
+                    colorClass = 'text-red-600';
+                    bgClass = 'bg-red-50';
+                }
+                countdownEl.classList.add(colorClass, bgClass);
+
+                // Format countdown string
+                const hours = Math.floor(diffInMs / 3600000);
+                const minutes = Math.floor((diffInMs % 3600000) / 60000);
+                const seconds = Math.floor((diffInMs % 60000) / 1000);
+
+                let countdownText = 'Starts in: ';
+                if (hours > 0) {
+                    countdownText += `${hours}h ${minutes}m ${seconds}s`;
+                } else if (minutes > 0) {
+                    countdownText += `${minutes}m ${seconds}s`;
+                } else {
+                    countdownText += `${seconds}s`;
+                }
+                
+                countdownEl.innerHTML = countdownText;
+            }
+
+            function switchTab(tabId) {
+                // Hide all panes
+                Array.from(tabContent.children).forEach(pane => {
+                    pane.classList.add('hidden');
+                });
+                
+                // Deactivate all buttons
+                Array.from(tabsContainer.children).forEach(button => {
+                    button.classList.remove('text-blue-600', 'border-blue-600');
+                    button.classList.add('text-gray-500', 'border-transparent');
+                });
+                
+                // Show selected pane
+                const activePane = document.getElementById(`tab-${tabId}`);
+                if (activePane) {
+                    activePane.classList.remove('hidden');
+                }
+                
+                // Activate selected button
+                const activeButton = tabsContainer.querySelector(`[data-tab="${tabId}"]`);
+                if (activeButton) {
+                    activeButton.classList.add('text-blue-600', 'border-blue-600');
+                    activeButton.classList.remove('text-gray-500', 'border-transparent');
+                }
+                
+                // Re-render content on tab switch
+                switch(tabId) {
+                    case 'home': renderHome(); break;
+                    case 'schedule': renderSchedule(); break;
+                    case 'contacts': renderContacts(contactSearch.value); break;
+                    case 'add-new': renderContactOptions(); break;
+                }
+            }
+            
+            function handleAddEvent(e) {
+                e.preventDefault();
+                const type = eventType.value;
+                const title = document.getElementById('event-title').value;
+                const date = document.getElementById('event-date').value;
+                
+                const newEntry = {
+                    id: 's_' + Date.now(),
+                    type: type,
+                    title: title,
+                    date: date,
+                    notes: document.getElementById('event-notes').value,
+                };
+                
+                if (type === 'todo') {
+                    newEntry.completed = false;
+                } else {
+                    newEntry.startTime = document.getElementById('event-start-time').value;
+                    newEntry.endTime = document.getElementById('event-end-time').value;
+                    newEntry.location = document.getElementById('event-location').value;
+                    newEntry.contactIds = Array.from(eventContactsSelect.selectedOptions).map(opt => opt.value);
+                    
+                    // Validate times
+                    if (newEntry.endTime && newEntry.startTime > newEntry.endTime) {
+                        showToast('End time must be after start time.', 'error');
+                        return;
+                    }
+                }
+                
+                appData.schedule.push(newEntry);
+                saveData();
+                showToast(`New ${type} added successfully!`);
+                addEventForm.reset();
+                toggleEventFormFields(); // Reset form visibility
+                renderAll();
+            }
+            
+            function handleAddContact(e) {
+                e.preventDefault();
+                
+                const newContact = {
+                    id: 'c_' + Date.now(),
+                    name: document.getElementById('contact-name').value,
+                    company: document.getElementById('contact-company').value,
+                    title: document.getElementById('contact-title').value,
+                    phone: document.getElementById('contact-phone').value,
+                    email: document.getElementById('contact-email').value,
+                    notes: document.getElementById('contact-notes').value,
+                };
+                
+                appData.contacts.push(newContact);
+                saveData();
+                showToast('Contact added successfully!');
+                addContactForm.reset();
+                renderAll(); // Re-render all to update contact lists
+            }
+
+            function toggleTodoComplete(id) {
+                const todo = appData.schedule.find(item => item.id === id);
+                if (todo) {
+                    todo.completed = !todo.completed;
+                    saveData();
+                    renderHome();
+                    showToast(todo.completed ? 'To-Do marked as complete!' : 'To-Do marked as pending.');
+                }
+            }
+
+            function deleteScheduleItem(id) {
+                appData.schedule = appData.schedule.filter(item => item.id !== id);
+                saveData();
+                renderHome();
+                renderSchedule();
+                showToast('Event deleted.');
+            }
+
+            function deleteContact(id) {
+                appData.contacts = appData.contacts.filter(item => item.id !== id);
+                
+                // Unlink from schedule
+                appData.schedule.forEach(event => {
+                    if (event.contactIds && event.contactIds.includes(id)) {
+                        event.contactIds = event.contactIds.filter(cid => cid !== id);
+                    }
+                });
+                
+                saveData();
+                renderAll();
+                showToast('Contact deleted and unlinked.');
+            }
+            
+            function toggleEventFormFields() {
+                const type = eventType.value;
+                if (type === 'todo') {
+                    eventTimeFields.classList.add('hidden');
+                    eventLocationField.classList.add('hidden');
+                    eventContactsField.classList.add('hidden');
+                    // 'To-Do' doesn't require time, location, or contacts
+                    document.getElementById('event-start-time').required = false;
+                    document.getElementById('event-end-time').required = false;
+                } else {
+                    eventTimeFields.classList.remove('hidden');
+                    eventLocationField.classList.remove('hidden');
+                    eventContactsField.classList.remove('hidden');
+                    document.getElementById('event-start-time').required = true;
+                    document.getElementById('event-end-time').required = true;
+                }
+            }
+            
+            function handleSuggestTimes() {
+                const events = appData.schedule
+                    .filter(item => item.date === selectedScheduleDate && item.type !== 'todo')
+                    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+                
+                const dayHours = appData.eventDetails.dailyHours.find(d => d.date === selectedScheduleDate);
+                const dayStart = dayHours && dayHours.start ? dayHours.start : '09:00';
+                const dayEnd = dayHours && dayHours.end ? dayHours.end : '18:00';
+
+                let suggestions = [];
+                let lastEndTime = dayStart;
+                
+                events.forEach(event => {
+                    if (event.startTime > lastEndTime) {
+                        suggestions.push({ start: lastEndTime, end: event.startTime });
+                    }
+                    if (event.endTime > lastEndTime) {
+                        lastEndTime = event.endTime;
+                    }
+                });
+                
+                if (dayEnd > lastEndTime) {
+                    suggestions.push({ start: lastEndTime, end: dayEnd });
+                }
+                
+                if (suggestions.length === 0) {
+                    let message = dayHours && dayHours.start ? 'No free time slots found for this day.' : 'Set event hours for this day to get suggestions.';
+                    availabilityContent.innerHTML = `<p class="text-gray-600">${message}</p>`;
+                } else {
+                    availabilityContent.innerHTML = suggestions.map(slot => 
+                        `<div class="bg-green-100 border border-green-300 text-green-800 px-4 py-2 rounded-lg">
+                            ${formatTime(slot.start)} &mdash; ${formatTime(slot.end)}
+                         </div>`
+                    ).join('');
+                }
+                
+                availabilityModal.classList.remove('hidden');
+            }
+
+            // =======================
+            //  EVENT SETTINGS MODAL
+            // =======================
+
+            function openEventSettingsModal() {
+                // Load current event data into modal
+                const details = appData.eventDetails;
+                settingEventName.value = details.name;
+                settingStartDate.value = details.startDate;
+                settingEndDate.value = details.endDate;
+                
+                renderDailyHoursInputs();
+                eventSettingsModal.classList.remove('hidden');
+            }
+
+            function closeEventSettingsModal() {
+                eventSettingsModal.classList.add('hidden');
+            }
+
+            function renderDailyHoursInputs() {
+                const startDate = settingStartDate.value;
+                const endDate = settingEndDate.value;
+                
+                if (!startDate || !endDate || endDate < startDate) {
+                    dailyHoursContainer.innerHTML = '<p class="text-gray-500">Set valid start and end dates to define daily hours.</p>';
+                    copyHoursButton.classList.add('hidden');
+                    return;
+                }
+                
+                dailyHoursContainer.innerHTML = '';
+                let currentDate = new Date(startDate + 'T00:00:00'); // Use T00:00:00 to avoid timezone issues
+                const finalDate = new Date(endDate + 'T00:00:00');
+                
+                let dayCount = 0;
+                while (currentDate <= finalDate) {
+                    dayCount++;
+                    const dateStr = getISODate(currentDate);
+                    const dayLabel = currentDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                    
+                    const existingHours = appData.eventDetails.dailyHours.find(d => d.date === dateStr);
+                    const startTime = existingHours ? existingHours.start : '';
+                    const endTime = existingHours ? existingHours.end : '';
+                    
+                    const dayHTML = `
+                        <div class="flex items-center gap-3" data-date="${dateStr}">
+                            <label class="w-1/3 text-sm font-medium text-gray-700">${dayLabel}</label>
+                            <input type="time" class="daily-start-time mt-1 block w-1/3 px-3 py-1 border border-gray-300 rounded-lg shadow-sm text-sm" value="${startTime}">
+                            <input type="time" class="daily-end-time mt-1 block w-1/3 px-3 py-1 border border-gray-300 rounded-lg shadow-sm text-sm" value="${endTime}">
+                        </div>
+                    `;
+                    dailyHoursContainer.innerHTML += dayHTML;
+                    
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+
+                // Show or hide copy button
+                if (dayCount > 1) {
+                    copyHoursButton.classList.remove('hidden');
+                } else {
+                    copyHoursButton.classList.add('hidden');
+                }
+            }
+
+            function handleCopyHours(e) {
+                e.preventDefault();
+                const dayRows = dailyHoursContainer.querySelectorAll('[data-date]');
+                if (dayRows.length < 2) {
+                    showToast('You need at least two days to copy hours.', 'error');
+                    return;
+                }
+                
+                const firstDay = dayRows[0];
+                const firstStart = firstDay.querySelector('.daily-start-time').value;
+                const firstEnd = firstDay.querySelector('.daily-end-time').value;
+                
+                for (let i = 1; i < dayRows.length; i++) {
+                    dayRows[i].querySelector('.daily-start-time').value = firstStart;
+                    dayRows[i].querySelector('.daily-end-time').value = firstEnd;
+                }
+                showToast('Hours copied to all other days!');
+            }
+
+            function handleSaveSettings() {
+                const newName = settingEventName.value.trim();
+                const newStartDate = settingStartDate.value;
+                const newEndDate = settingEndDate.value;
+
+                if (!newName) {
+                    showToast('Event name cannot be empty.', 'error');
+                    return;
+                }
+
+                // Read daily hours
+                const newDailyHours = [];
+                dailyHoursContainer.querySelectorAll('[data-date]').forEach(row => {
+                    newDailyHours.push({
+                        date: row.dataset.date,
+                        start: row.querySelector('.daily-start-time').value,
+                        end: row.querySelector('.daily-end-time').value,
+                    });
+                });
+                
+                const oldName = currentEventName;
+                
+                // Handle name change
+                if (oldName !== newName) {
+                    if (eventNames.includes(newName)) {
+                        showToast(`An event named "${newName}" already exists.`, 'error');
+                        return;
+                    }
+                    
+                    // Update event list
+                    eventNames = eventNames.map(name => name === oldName ? newName : name);
+                    saveEventNames();
+                    
+                    // Remove old data
+                    localStorage.removeItem(getEventDataKey(oldName));
+                    
+                    currentEventName = newName;
+                    localStorage.setItem(LS_ACTIVE_EVENT_KEY, currentEventName);
+                    populateEventSelector();
+                    eventSelector.value = currentEventName; // Set dropdown to new name
+                }
+                
+                // Save data under new (or same) name
+                appData.eventDetails = {
+                    name: newName,
+                    startDate: newStartDate,
+                    endDate: newEndDate,
+                    dailyHours: newDailyHours
+                };
+                saveData();
+                
+                showToast('Event settings saved!');
+                closeEventSettingsModal();
+                renderAll(); // Re-render in case details changed
+            }
+            
+            // =======================
+            //  EDIT EVENT MODAL
+            // =======================
+
+            function openEditEventModal(id) {
+                const event = appData.schedule.find(item => item.id === id);
+                if (!event) {
+                    showToast('Error: Could not find event to edit.', 'error');
+                    return;
+                }
+
+                // To-Dos are edited differently
+                if (event.type === 'todo') {
+                    showToast('To-Dos can be completed on the Home tab.', 'error');
+                    return;
+                }
+
+                // Populate form
+                document.getElementById('edit-event-id').value = event.id;
+                document.getElementById('edit-event-type').value = event.type;
+                document.getElementById('edit-event-title').value = event.title;
+                document.getElementById('edit-event-date').value = event.date;
+                document.getElementById('edit-event-start-time').value = event.startTime;
+                document.getElementById('edit-event-end-time').value = event.endTime;
+                document.getElementById('edit-event-location').value = event.location;
+                document.getElementById('edit-event-notes').value = event.notes;
+                
+                // Populate and select contacts
+                renderContactOptions('#edit-event-contacts');
+                const contactSelect = document.getElementById('edit-event-contacts');
+                Array.from(contactSelect.options).forEach(option => {
+                    if (event.contactIds && event.contactIds.includes(option.value)) {
+                        option.selected = true;
+                    } else {
+                        option.selected = false;
+                    }
+                });
+                
+                // Show modal
+                editEventModal.classList.remove('hidden');
+            }
+            
+            function handleSaveEditEvent(e) {
+                e.preventDefault();
+                
+                const id = document.getElementById('edit-event-id').value;
+                const event = appData.schedule.find(item => item.id === id);
+                if (!event) {
+                    showToast('Error: Could not save changes.', 'error');
+                    return;
+                }
+                
+                // Update event object
+                event.type = document.getElementById('edit-event-type').value;
+                event.title = document.getElementById('edit-event-title').value;
+                event.date = document.getElementById('edit-event-date').value;
+                event.startTime = document.getElementById('edit-event-start-time').value;
+                event.endTime = document.getElementById('edit-event-end-time').value;
+                event.location = document.getElementById('edit-event-location').value;
+                event.notes = document.getElementById('edit-event-notes').value;
+                event.contactIds = Array.from(document.getElementById('edit-event-contacts').selectedOptions).map(opt => opt.value);
+                
+                // Validate times
+                if (event.endTime && event.startTime > event.endTime) {
+                    showToast('End time must be after start time.', 'error');
+                    return;
+                }
+                
+                saveData();
+                renderAll();
+                editEventModal.classList.add('hidden');
+                showToast('Event updated successfully!');
+            }
+
+            // =======================
+            //  CONTACT DETAILS MODAL
+            // =======================
+
+            function showContactDetailsModal(id) {
+                const contact = appData.contacts.find(c => c.id === id);
+                if (!contact) {
+                    showToast('Error: Could not find contact.', 'error');
+                    return;
+                }
+                
+                contactDetailsModalContent.innerHTML = `
+                    <h4 class="text-2xl font-bold text-blue-700">${contact.name}</h4>
+                    <p class="text-lg text-gray-700">${contact.title || 'No title'}</p>
+                    <p class="text-lg text-gray-600">${contact.company || 'No company'}</p>
+                    
+                    <div class="mt-4 pt-4 border-t space-y-2">
+                        ${contact.phone ? `<p class="text-md text-gray-800 flex items-center gap-3"><ion-icon name="call-outline" class="text-xl text-gray-500"></ion-icon> ${contact.phone}</p>` : ''}
+                        ${contact.email ? `<p class="text-md text-gray-800 flex items-center gap-3"><ion-icon name="mail-outline" class="text-xl text-gray-500"></ion-icon> ${contact.email}</p>` : ''}
+                        ${contact.notes ? `<div class="mt-2">
+                            <h5 class="text-sm font-semibold text-gray-500">Notes:</h5>
+                            <p class="text-md text-gray-800 italic bg-gray-50 p-2 rounded-lg border">${contact.notes}</p>
+                           </div>` : ''}
+                    </div>
+                `;
+                
+                contactDetailsModal.classList.remove('hidden');
+            }
+
+
+            // =======================
+            //  RENDER FUNCTIONS
+            // =======================
+
+            function renderHome() {
+                const now = new Date();
+                const today = getTodayDateString(now);
+                const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                // --- Render "What's Next" ---
+                const upcomingEvents = appData.schedule
+                    .filter(item => item.date === today && item.type !== 'todo' && item.startTime > currentTime)
+                    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+                    
+                const countdownEl = document.getElementById('next-event-countdown');
+                
+                if (upcomingEvents.length > 0) {
+                    const nextEvent = upcomingEvents[0];
+                    currentNextEvent = nextEvent; // Set for countdown
+                    nextEventContainer.innerHTML = getEventCardHTML(nextEvent, { showDate: false });
+                    
+                    // Ensure countdown element exists
+                    if (!countdownEl) {
+                        const el = document.createElement('div');
+                        el.id = 'next-event-countdown';
+                        el.className = 'mt-4 p-3 rounded-lg font-semibold text-lg transition-colors duration-300';
+                        nextEventContainer.insertAdjacentElement('afterend', el);
+                    }
+                } else {
+                    currentNextEvent = null; // Clear for countdown
+                    nextEventContainer.innerHTML = '<p class="text-gray-500">No more events scheduled for today.</p>';
+                    if (countdownEl) countdownEl.innerHTML = ''; // Clear countdown text
+                }
+                
+                // --- Render "To-Dos" ---
+                const pendingTodos = appData.schedule
+                    .filter(item => item.type === 'todo' && !item.completed)
+                    .sort((a, b) => a.date.localeCompare(b.date));
+                    
+                if (pendingTodos.length > 0) {
+                    todoListContainer.innerHTML = pendingTodos.map(todo => `
+                        <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
+                            <div>
+                                <span class="font-medium">${todo.title}</span>
+                                <span class="text-sm text-gray-500 ml-2">(Due: ${todo.date})</span>
+                            </div>
+                            <button data-id="${todo.id}" class="complete-todo-button text-2xl text-green-500 hover:text-green-700">
+                                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    todoListContainer.innerHTML = '<p class="text-gray-500">You\'re all caught up!</p>';
+                }
+            }
+            
+            function renderSchedule() {
+                const dayName = new Date(selectedScheduleDate + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+                scheduleDayTitle.textContent = `Schedule for ${dayName}`;
+                
+                const events = appData.schedule
+                    .filter(item => item.date === selectedScheduleDate && item.type !== 'todo')
+                    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+                
+                if (events.length > 0) {
+                    dailyScheduleContainer.innerHTML = events.map(event => getEventCardHTML(event, { showDate: false })).join('');
+                } else {
+                    dailyScheduleContainer.innerHTML = '<p class="text-gray-500">No events scheduled for this day.</p>';
+                }
+            }
+            
+            function renderContacts(filter = '') {
+                const lowerFilter = filter.toLowerCase();
+                const sortBy = contactSort.value; // Get sort preference
+
+                const filteredContacts = appData.contacts.filter(contact => 
+                    contact.name.toLowerCase().includes(lowerFilter) ||
+                    (contact.company && contact.company.toLowerCase().includes(lowerFilter)) ||
+                    (contact.title && contact.title.toLowerCase().includes(lowerFilter))
+                ).sort((a, b) => {
+                    if (sortBy === 'company') {
+                        const companyA = a.company || '';
+                        const companyB = b.company || '';
+                        const nameA = a.name || '';
+                        const nameB = b.name || '';
+
+                        const companyCompare = companyA.localeCompare(companyB);
+                        if (companyCompare !== 0) {
+                            return companyCompare;
+                        }
+                        return nameA.localeCompare(nameB); // Secondary sort by name
+                    } else {
+                        // Default sort by name
+                        return (a.name || '').localeCompare(b.name || '');
+                    }
+                });
+                
+                if (filteredContacts.length > 0) {
+                    contactsContainer.innerHTML = filteredContacts.map(contact => `
+                        <div class="bg-white border border-gray-200 p-4 rounded-lg shadow-sm relative">
+                            <button data-id="${contact.id}" class="delete-contact-button absolute top-2 right-2 text-gray-400 hover:text-red-600">
+                                <ion-icon name="trash-outline" class="text-xl"></ion-icon>
+                            </button>
+                            <h3 class="text-xl font-semibold text-blue-700">${contact.name}</h3>
+                            <p class="text-gray-600">${contact.title || 'No title'} @ ${contact.company || 'No company'}</p>
+                            <div class="mt-3 pt-3 border-t">
+                                ${contact.phone ? `<p class="text-sm text-gray-700 flex items-center gap-2"><ion-icon name="call-outline"></ion-icon> ${contact.phone}</p>` : ''}
+                                ${contact.email ? `<p class="text-sm text-gray-700 flex items-center gap-2"><ion-icon name="mail-outline"></ion-icon> ${contact.email}</p>` : ''}
+                                ${contact.notes ? `<p class="text-sm text-gray-500 mt-2 italic">Note: ${contact.notes}</p>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    contactsContainer.innerHTML = '<p class="text-gray-500 col-span-full">No contacts found.</p>';
+                }
+            }
+            
+            function renderContactOptions(selector = '#event-contacts') {
+                const selectEl = document.querySelector(selector);
+                if (!selectEl) return;
+
+                selectEl.innerHTML = ''; // Clear
+                
+                if (appData.contacts.length === 0) {
+                    selectEl.innerHTML = '<option disabled>No contacts added yet.</option>';
+                    return;
+                }
+                
+                appData.contacts.sort((a, b) => a.name.localeCompare(b.name)).forEach(contact => {
+                    const option = document.createElement('option');
+                    option.value = contact.id;
+                    option.textContent = `${contact.name} (${contact.company || 'N/A'})`;
+                    selectEl.appendChild(option);
+                });
+            }
+            
+            // =======================
+            //  UTILITY FUNCTIONS
+            // =======================
+            
+            function getEventCardHTML(event, options = { showDate: true }) {
+                const eventIcons = {
+                    meeting: 'briefcase-outline',
+                    conference: 'megaphone-outline',
+                    interview: 'chatbubbles-outline',
+                    todo: 'checkbox-outline'
+                };
+                const eventColors = {
+                    meeting: 'bg-blue-100 border-blue-300',
+                    conference: 'bg-purple-100 border-purple-300',
+                    interview: 'bg-yellow-100 border-yellow-300',
+                    todo: 'bg-gray-100 border-gray-300'
+                };
+                
+                let linkedContacts = [];
+                if (event.contactIds && event.contactIds.length > 0) {
+                    linkedContacts = event.contactIds.map(id => 
+                        appData.contacts.find(c => c.id === id)
+                    ).filter(Boolean); // Filter out any undefined contacts
+                }
+                
+                return `
+                    <div class="border ${eventColors[event.type]} p-4 rounded-lg shadow-sm relative mb-4">
+                        <div class="absolute top-2 right-2 flex gap-2">
+                            <button data-id="${event.id}" class="edit-event-button text-gray-400 hover:text-blue-600" title="Edit Event">
+                                <ion-icon name="pencil-outline" class="text-lg"></ion-icon>
+                            </button>
+                            <button data-id="${event.id}" class="delete-event-button text-gray-400 hover:text-red-600" title="Delete Event">
+                                <ion-icon name="trash-outline" class="text-xl"></ion-icon>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <ion-icon name="${eventIcons[event.type]}" class="text-2xl text-gray-700"></ion-icon>
+                            <h3 class="text-xl font-semibold text-gray-800">${event.title}</h3>
+                        </div>
+                        <div class="ml-9 space-y-1">
+                            <p class="text-lg font-medium text-gray-600">
+                                ${options.showDate ? `<span class="mr-3">${event.date}</span>` : ''}
+                                ${formatTime(event.startTime)} &mdash; ${formatTime(event.endTime)}
+                            </p>
+                            <p class="text-md text-gray-700 flex items-center gap-2">
+                                <ion-icon name="location-outline"></ion-icon>
+                                ${event.location || 'No location set'}
+                            </p>
+                            ${event.notes ? `<p class="text-sm text-gray-500 mt-2 italic">Note: ${event.notes}</p>` : ''}
+                            ${linkedContacts.length > 0 ? `
+                                <div class="mt-3 pt-3 border-t border-gray-300">
+                                    <h4 class="text-sm font-semibold mb-1">Linked Contacts:</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${linkedContacts.map(c => `<button data-contact-id="${c.id}" class="contact-pill-button text-xs bg-gray-200 text-gray-800 px-2 py-1 rounded-full hover:bg-blue-200 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500">${c.name}</button>`).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            function getTodayDateString(date = new Date()) {
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            // Helper function to get YYYY-MM-DD from a Date object
+            function getISODate(date) {
+                return date.toISOString().split('T')[0];
+            }
+            
+            function formatTime(timeStr) {
+                if (!timeStr) return '';
+                const [hours, minutes] = timeStr.split(':');
+                const h = parseInt(hours);
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                const h12 = h % 12 || 12; // Convert 0 to 12
+                return `${h12}:${minutes} ${ampm}`;
+            }
+            
+            function showToast(message, type = 'success') {
+                toastMessage.textContent = message;
+                
+                toast.classList.remove('bg-gray-900', 'bg-red-600');
+                if (type === 'error') {
+                    toast.classList.add('bg-red-600');
+                } else {
+                    toast.classList.add('bg-gray-900');
+                }
+                
+                toast.classList.remove('hidden', 'translate-y-10', 'opacity-0');
+                
+                setTimeout(() => {
+                    toast.classList.add('translate-y-10', 'opacity-0');
+                    setTimeout(() => {
+                        toast.classList.add('hidden');
+                    }, 300);
+                }, 3000);
+            }
+
+            // =======================
+            //  RUN APPLICATION
+            // =======================
+            initApp();
+            
+        });
+    </script>
+</body>
+</html>
